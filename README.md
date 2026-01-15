@@ -57,7 +57,7 @@ brew install python
 ### Step 2: Clone the Repository
 ```bash
 git clone  https://github.com/Bhupanimounika22/automl.git
-cd automl_app
+cd automl
 ```
 
 ### Step 3: Create Virtual Environment
@@ -98,7 +98,7 @@ During installation, check “Add Python to PATH”
 ### Step 2: Clone the Repository
 ```bash
 git clone https://github.com/Bhupanimounika22/automl.git
-cd automl_app
+cd automl
 ```
 
 ### Step 3: Create Virtual Environment
