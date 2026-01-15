@@ -17,26 +17,6 @@ This project is designed for **final-year academic submission** and supports bot
 - Interactive Streamlit UI
 - Works on **macOS & Windows**
 
----
-
-## 📁 Project Structure
-
-## automl_app/
-│
-├── app.py # Main Streamlit application
-├── preprocessing.py # Data preprocessing logic
-├── training.py # AutoML training (all models)
-├── prediction.py # Prediction interface
-├── report.py # Report / PDF generation
-├── utils/
-│ └── session.py # Session state handling
-│
-├── requirements.txt # Project dependencies
-├── README.md # Project documentation
-├── .gitignore # Git ignore rules
-
-
-
 
 ---
 
