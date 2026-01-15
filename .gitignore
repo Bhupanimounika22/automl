@@ -1,0 +1,57 @@
+# ================= PYTHON =================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+
+# ================= VIRTUAL ENV =================
+venv/
+env/
+.venv/
+
+# ================= STREAMLIT =================
+.streamlit/
+*.log
+
+# ================= DATA FILES =================
+*.csv
+*.xlsx
+*.xls
+*.json
+*.parquet
+data/
+datasets/
+downloads/
+
+# ================= MODEL FILES =================
+*.pkl
+*.joblib
+*.h5
+*.onnx
+
+# ================= NOTEBOOKS =================
+.ipynb_checkpoints/
+
+# ================= CACHE =================
+.cache/
+__cache__/
+
+# ================= OS =================
+.DS_Store
+Thumbs.db
+
+# ================= IDE =================
+.vscode/
+.idea/
+
+# ================= REPORTS =================
+reports/
+*.pdf
+
+# ================= SECRETS =================
+.env
+.env.*
+secrets.toml
