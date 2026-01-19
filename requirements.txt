@@ -7,3 +7,4 @@ seaborn
 joblib
 reportlab
 imbalanced-learn
+watchdog
