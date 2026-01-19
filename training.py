@@ -9,7 +9,10 @@ from sklearn.model_selection import (
     KFold,
     cross_val_score
 )
-from sklearn.metrics import f1_score, r2_score
+from sklearn.metrics import f1_score, r2_score, confusion_matrix
+
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # ================= CLASSIFICATION MODELS =================
 from sklearn.linear_model import LogisticRegression
@@ -38,11 +41,10 @@ from sklearn.tree import DecisionTreeRegressor
 # ================= DATA BALANCING =================
 from imblearn.over_sampling import SMOTE
 
-# ================= CONFIG =================
 TARGET_SCORE = 0.90
 
 
-# ================= AI METADATA =================
+# ================= DATASET INTELLIGENCE =================
 def extract_metadata(df, target):
     return {
         "rows": df.shape[0],
@@ -57,10 +59,10 @@ def extract_metadata(df, target):
 
 # ================= TRAINING PAGE =================
 def training_page():
-    st.title("🤖 AutoML – Train ALL Models & Pick Best")
+    st.title("🤖 AutoML – Train ALL Models")
 
     if "df" not in st.session_state:
-        st.error("❌ Upload & preprocess data first.")
+        st.error("❌ Upload & preprocess data first")
         return
 
     df = st.session_state.df
@@ -68,23 +70,16 @@ def training_page():
     task = st.session_state.task
     preprocessor = st.session_state.preprocessor
 
-    # ================= METADATA =================
     meta = extract_metadata(df, target)
     with st.expander("🧠 Dataset Intelligence"):
         st.json(meta)
 
-    # ================= SIZE DETECTION =================
+    # ================= DATA SIZE =================
     rows = df.shape[0]
-    if rows < 500:
-        dataset_size = "small"
-    elif rows < 5000:
-        dataset_size = "medium"
-    else:
-        dataset_size = "large"
+    dataset_size = "small" if rows < 500 else "medium" if rows < 5000 else "large"
+    st.info(f"📊 Dataset Size: **{dataset_size.upper()}**")
 
-    st.info(f"📊 Dataset Size Detected: **{dataset_size.upper()}**")
-
-    # ================= DATA SPLIT =================
+    # ================= SPLIT =================
     X = df.drop(columns=[target])
 
     if task == "classification":
@@ -104,14 +99,13 @@ def training_page():
     X_train = preprocessor.transform(X_train)
     X_test = preprocessor.transform(X_test)
 
-    # ================= SMALL DATA HANDLING =================
+    # ================= SMALL DATA FIX =================
     if dataset_size == "small":
-        st.warning("⚠️ Small dataset detected → applying data enhancement")
+        st.warning("⚠️ Small dataset → Enhancing")
 
         if task == "classification":
             smote = SMOTE(random_state=42)
             X_train, y_train = smote.fit_resample(X_train, y_train)
-
         else:
             noise = np.random.normal(0, 0.01, X_train.shape)
             X_train = np.vstack([X_train, X_train + noise])
@@ -148,39 +142,32 @@ def training_page():
         results = []
         best_score = -np.inf
         best_model = None
-        best_model_name = None
+        best_name = None
 
         progress = st.progress(0)
         total = len(models)
 
         for i, (name, model) in enumerate(models.items(), start=1):
             try:
-                if dataset_size == "small":
-                    if task == "classification":
-                        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-                        score = cross_val_score(
-                            model, X_train, y_train,
-                            scoring="f1_macro",
-                            cv=cv
-                        ).mean()
-                    else:
-                        cv = KFold(n_splits=5, shuffle=True, random_state=42)
-                        score = cross_val_score(
-                            model, X_train, y_train,
-                            scoring="r2",
-                            cv=cv
-                        ).mean()
-                else:
-                    model.fit(X_train, y_train)
-                    preds = model.predict(X_test)
-                    score = f1_score(y_test, preds, average="macro") if task == "classification" else r2_score(y_test, preds)
+                model.fit(X_train, y_train)
+                preds = model.predict(X_test)
+
+                score = (
+                    f1_score(y_test, preds, average="macro")
+                    if task == "classification"
+                    else r2_score(y_test, preds)
+                )
 
                 results.append({"Model": name, "Score": score})
 
                 if score > best_score:
                     best_score = score
                     best_model = model
-                    best_model_name = name
+                    best_name = name
+
+                    # SAVE FOR CONFUSION MATRIX
+                    st.session_state.y_test = y_test
+                    st.session_state.y_pred = preds
 
             except Exception:
                 results.append({"Model": name, "Score": None})
@@ -189,7 +176,7 @@ def training_page():
 
         # ================= SAVE =================
         st.session_state.model = best_model
-        st.session_state.best_model_name = best_model_name
+        st.session_state.best_model_name = best_name
         st.session_state.final_accuracy = best_score
 
         df_results = pd.DataFrame(results).sort_values(by="Score", ascending=False)
@@ -199,15 +186,25 @@ def training_page():
         st.subheader("📊 Model Comparison")
         st.dataframe(df_results.style.format({"Score": "{:.4f}"}))
 
-        st.success(f"🏆 Best Model: **{best_model_name}**")
+        st.success(f"🏆 Best Model: **{best_name}**")
         st.metric("Best Score", f"{best_score:.4f}")
 
-        if task == "classification" and best_score < TARGET_SCORE:
-            st.warning(
-                "⚠️ 90% not reached.\n"
-                "Reason: dataset size / feature quality.\n"
-                "System tried ALL models correctly."
+        # ================= CONFUSION MATRIX =================
+        if task == "classification":
+            st.subheader("🧩 Confusion Matrix")
+
+            cm = confusion_matrix(
+                st.session_state.y_test,
+                st.session_state.y_pred
             )
+
+            fig, ax = plt.subplots()
+            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("Actual")
+            ax.set_title(f"Confusion Matrix – {best_name}")
+
+            st.pyplot(fig)
 
 
 # ================= RUN =================
